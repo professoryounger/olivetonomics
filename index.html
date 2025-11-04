@@ -63,21 +63,127 @@
       <tbody></tbody>
       <tfoot><tr><td colspan="10" class="muted">No data yet.</td></tr></tfoot>
     </table>
+    <div class="foot">
+      <button class="btn" onclick="exportCSV()">Export Results (CSV)</button>
+    </div>
   </section>
 </main>
 
 <script>
 const state={started:false,month:0,maxMonths:3,rows:[],cash:0};
-function startGame(){state.maxMonths=parseInt(document.getElementById('months').value)||12;state.month=0;state.rows=[];state.started=true;state.cash=parseFloat(document.getElementById('startCash').value)||5000;buildControls();renderTable();updateCashBar();}
+function startGame(){
+  state.maxMonths=parseInt(document.getElementById('months').value)||12;
+  state.month=0;state.rows=[];
+  state.started=true;
+  state.cash=parseFloat(document.getElementById('startCash').value)||5000;
+  buildControls();renderTable();updateCashBar();
+}
 function resetAll(){location.reload();}
-function buildControls(){const c=document.getElementById('controls');if(!state.started){c.textContent='Press “Start Simulation”.';return;}const disabled=state.month>=state.maxMonths;c.innerHTML=`<div class="row"><div><label>ΔPrice%</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div><div><label>Marketing$</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div><div><label>Training$</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div></div><div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;}
-function updateCashBar(){document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;}
-function runMonth(){showLoader(['Processing market data...','Calculating sales...','Analysing competitors...','Applying event...']);setTimeout(()=>{simulate();hideLoader();},3000);} 
-function simulate(){const dPrice=parseFloat(document.getElementById('dPrice').value)||0;const mSpend=parseFloat(document.getElementById('mkt').value)||0;const tSpend=parseFloat(document.getElementById('train').value)||0;const events=['Competitor discount','Local buzz','Supply hiccup','Holiday surge','Normal'];const event=events[Math.floor(Math.random()*events.length)];let demand=120*(1-(dPrice/100)*0.5)+(Math.random()*10-5);if(event==='Local buzz')demand*=1.1;if(event==='Competitor discount')demand*=0.9;if(event==='Holiday surge')demand*=1.15;const price=10*(1+dPrice/100);const revenue=price*demand;const cost=4*demand+mSpend+tSpend;const profit=revenue-cost;state.cash+=profit;state.rows.push({month:state.month+1,dPrice,mSpend,tSpend,event,demand:Math.round(demand),revenue, cost,profit,cash:state.cash});state.month++;buildControls();renderTable();updateCashBar();}
-function renderTable(){const tb=document.querySelector('#table tbody');const tf=document.querySelector('#table tfoot tr td');tb.innerHTML='';if(state.rows.length===0){tf.textContent='No data yet.';return;}tf.textContent='';for(const r of state.rows){const tr=document.createElement('tr');tr.innerHTML=`<td>${r.month}</td><td>${r.dPrice}%</td><td>${fmt(r.mSpend)}</td><td>${fmt(r.tSpend)}</td><td class='muted'>${r.event}</td><td>${r.demand}</td><td>${fmt(r.revenue)}</td><td>${fmt(r.cost)}</td><td class='${r.profit>=0?'ok':'bad'}'>${fmt(r.profit)}</td><td class='${r.cash<0?'bad':''}'>${fmt(r.cash)}</td>`;tb.appendChild(tr);}tf.textContent=`Months completed ${state.rows.length}/${state.maxMonths}.`;}
+function buildControls(){
+  const c=document.getElementById('controls');
+  if(!state.started){c.textContent='Press “Start Simulation”.';return;}
+  const disabled=state.month>=state.maxMonths;
+  c.innerHTML=`<div class="row">
+    <div><label>ΔPrice%</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
+    <div><label>Marketing$</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
+    <div><label>Training$</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
+  </div>
+  <div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;
+}
+function updateCashBar(){
+  document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;
+}
+function runMonth(){
+  showLoader(['Processing market data...','Calculating sales...','Analysing competitors...','Applying event...']);
+  setTimeout(()=>{simulate();hideLoader();},3000);
+}
+function simulate(){
+  const company=document.getElementById('company').value.trim();
+  const dPrice=parseFloat(document.getElementById('dPrice').value)||0;
+  const mSpend=parseFloat(document.getElementById('mkt').value)||0;
+  const tSpend=parseFloat(document.getElementById('train').value)||0;
+  const events=['Competitor discount','Local buzz','Supply hiccup','Holiday surge','Normal'];
+  const event=events[Math.floor(Math.random()*events.length)];
+  let demand=120*(1-(dPrice/100)*0.5)+(Math.random()*10-5);
+  if(event==='Local buzz')demand*=1.1;
+  if(event==='Competitor discount')demand*=0.9;
+  if(event==='Holiday surge')demand*=1.15;
+  const price=10*(1+dPrice/100);
+  const revenue=price*demand;
+  const cost=4*demand+mSpend+tSpend;
+  const profit=revenue-cost;
+  state.cash+=profit;
+  state.rows.push({
+    company,month:state.month+1,dPrice,mSpend,tSpend,event,
+    demand:Math.round(demand),revenue,cost,profit,cash:state.cash
+  });
+  state.month++;
+  buildControls();renderTable();updateCashBar();
+}
+function renderTable(){
+  const tb=document.querySelector('#table tbody');
+  const tf=document.querySelector('#table tfoot tr td');
+  tb.innerHTML='';
+  if(state.rows.length===0){tf.textContent='No data yet.';return;}
+  tf.textContent='';
+  for(const r of state.rows){
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.month}</td>
+      <td>${r.dPrice}%</td>
+      <td>${fmt(r.mSpend)}</td>
+      <td>${fmt(r.tSpend)}</td>
+      <td class='muted'>${r.event}</td>
+      <td>${r.demand}</td>
+      <td>${fmt(r.revenue)}</td>
+      <td>${fmt(r.cost)}</td>
+      <td class='${r.profit>=0?'ok':'bad'}'>${fmt(r.profit)}</td>
+      <td class='${r.cash<0?'bad':''}'>${fmt(r.cash)}</td>`;
+    tb.appendChild(tr);
+  }
+  tf.textContent=`Months completed ${state.rows.length}/${state.maxMonths}.`;
+}
 function fmt(n){return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
-function showLoader(lines){const overlay=document.getElementById('loaderOverlay');const loader=document.getElementById('loaderText');overlay.style.display='flex';loader.textContent='';let i=0;function type(){if(i<lines.length){loader.textContent+=lines[i]+'\n';i++;setTimeout(type,600);}else{}}type();}
-function hideLoader(){setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},2000);}
+function showLoader(lines){
+  const overlay=document.getElementById('loaderOverlay');
+  const loader=document.getElementById('loaderText');
+  overlay.style.display='flex';loader.textContent='';
+  let i=0;
+  function type(){
+    if(i<lines.length){
+      loader.textContent+=lines[i]+'\\n';
+      i++;
+      setTimeout(type,600);
+    }
+  }
+  type();
+}
+function hideLoader(){
+  setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},2000);
+}
+function exportCSV() {
+  if (state.rows.length === 0) return;
+  const headers = ['month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
+  const company = (state.rows[0]?.company || document.getElementById('company').value || 'olivetonomics')
+                    .replace(/[^a-z0-9]/gi, '_');
+  const now = new Date();
+  const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
+  const metadata = [
+    `Company:,${company}`,
+    `Exported:,${timestamp}`
+  ];
+  const lines = metadata
+    .concat([''])
+    .concat([headers.join(',')])
+    .concat(state.rows.map(r =>
+      [r.month, r.dPrice, r.mSpend, r.tSpend, `"${r.event}"`, r.demand,
+       r.revenue.toFixed(2), r.cost.toFixed(2), r.profit.toFixed(2), r.cash.toFixed(2)].join(',')
+    ));
+  const blob = new Blob([lines.join('\\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${company}_results.csv`;
+  a.click();
+}
 </script>
 </body>
 </html>
