@@ -1,92 +1,100 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Olivetonomics – Lean Startup Mini-Sim</title>
-<style>
-:root {
-  --bg:#0b1220;--panel:#121a2a;--muted:#9fb3c8;--text:#e6eef8;--accent:#70b5ff;
-  --ok:#6ee7a6;--bad:#ff9aa8;
-}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:var(--bg)}
-header{padding:22px;border-bottom:1px solid #22304a;background:linear-gradient(180deg,#101a2d,#0b1220)}
-h1{margin:0;font-size:24px;font-weight:600}
-.wrap{max-width:1100px;margin:0 auto;padding:16px}
-.grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
-.card{background:var(--panel);border:1px solid #22304a;border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
-label{display:block;margin:8px 0 4px;color:var(--muted);font-size:14px}
-input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3b59;background:#0e1626;color:var(--text)}
-textarea{resize:vertical;min-height:120px}
-.btn{border:1px solid #2b3b59;background:#0e1626;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;transition:0.15s}
-.btn:hover{border-color:#3a4f78;background:#152238}
-.accent{background:#132542;border-color:#1b3966;color:var(--accent)}
-.hint{font-size:13px;color:var(--muted)}
-.muted{color:var(--muted)}
-.ok{color:var(--ok)} .bad{color:var(--bad)}
-.foot{margin-top:10px;display:flex;gap:10px;justify-content:flex-end}
-table{width:100%;border-collapse:collapse;margin-top:8px}
-th,td{padding:8px 10px;border-bottom:1px solid #22304a;text-align:right}
-th:first-child,td:first-child{text-align:left}
-tfoot td{font-weight:600}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Olivetonomics – Lean Startup Mini-Sim</title>
+  <style>
+    :root { --bg:#0b1220;--panel:#121a2a;--muted:#9fb3c8;--text:#e6eef8;--accent:#70b5ff;--ok:#6ee7a6;--bad:#ff9aa8; }
+    *{box-sizing:border-box}
+    body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:var(--bg)}
+    header{padding:22px;border-bottom:1px solid #22304a;background:linear-gradient(180deg,#101a2d,#0b1220)}
+    h1{margin:0;font-size:24px;font-weight:600}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+    .card{background:var(--panel);border:1px solid #22304a;border-radius:14px;padding:16px;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+    label{display:block;margin:8px 0 4px;color:var(--muted);font-size:14px}
+    input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px solid #2b3b59;background:#0e1626;color:var(--text)}
+    textarea{resize:vertical;min-height:120px}
+    .btn{border:1px solid #2b3b59;background:#0e1626;color:var(--text);padding:10px 14px;border-radius:10px;cursor:pointer;transition:0.15s}
+    .btn:hover{border-color:#3a4f78;background:#152238}
+    .accent{background:#132542;border-color:#1b3966;color:var(--accent)}
+    .hint{font-size:13px;color:var(--muted)}
+    .muted{color:var(--muted)}
+    .ok{color:var(--ok)} .bad{color:var(--bad)}
+    .foot{margin-top:10px;display:flex;gap:10px;justify-content:flex-end}
+    table{width:100%;border-collapse:collapse;margin-top:8px}
+    th,td{padding:8px 10px;border-bottom:1px solid #22304a;text-align:right}
+    th:first-child,td:first-child{text-align:left}
+    tfoot td{font-weight:600}
+  </style>
 </head>
 <body>
 <header>
-<div class="wrap">
-  <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Build → Measure → Learn</span></h1>
-  <div class="hint">Simulate agile decision-making across three sprints. Adjust your strategy to respond to a living market.</div>
-</div>
+  <div class="wrap">
+    <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Build → Measure → Learn</span></h1>
+    <div class="hint">Good strategy should generally win, with mild market noise.  Now with a visible cash balance so teams must manage runway.</div>
+  </div>
 </header>
 
 <main class="wrap grid">
-<section class="card">
-  <h2>Setup</h2>
-  <label>Company name</label>
-  <input id="company" placeholder="e.g., Campus Coffee Co." />
-  <label>Primary metric</label>
-  <select id="metric">
-    <option value="profit">Net Profit</option>
-    <option value="satisfaction">Customer Satisfaction</option>
-    <option value="efficiency">Production Efficiency</option>
-  </select>
-  <label>Value hypothesis</label>
-  <textarea id="hypo" placeholder="If we invest in staff training and local marketing, satisfaction and profit will increase within three rounds."></textarea>
-  <div class="row">
-    <div><label>Base price ($)</label><input id="basePrice" type="number" value="10"/></div>
-    <div><label>Unit cost ($)</label><input id="unitCost" type="number" value="4"/></div>
-    <div><label>Starting demand (units)</label><input id="baseDemand" type="number" value="120"/></div>
-  </div>
-  <div class="foot">
-    <button class="btn accent" onclick="startGame()">Start Simulation</button>
-    <button class="btn" onclick="resetAll()">Reset</button>
-  </div>
-  <div id="marketSummary" class="hint" style="margin-top:10px"></div>
-</section>
+  <section class="card">
+    <h2>Setup</h2>
+    <label>Company name</label>
+    <input id="company" placeholder="e.g., Campus Coffee Co." />
+    <label>Primary metric</label>
+    <select id="metric">
+      <option value="profit">Net Profit</option>
+      <option value="satisfaction">Customer Satisfaction</option>
+      <option value="efficiency">Production Efficiency</option>
+    </select>
+    <label>Value hypothesis</label>
+    <textarea id="hypo" placeholder="If we invest in staff training and local marketing, satisfaction and profit will increase within three rounds."></textarea>
+    <div class="row">
+      <div><label>Base price ($)</label><input id="basePrice" type="number" value="10"/></div>
+      <div><label>Unit cost ($)</label><input id="unitCost" type="number" value="4"/></div>
+      <div><label>Starting demand (units)</label><input id="baseDemand" type="number" value="120"/></div>
+    </div>
+    <div class="row">
+      <div><label>Starting cash ($)</label><input id="startCash" type="number" value="5000"/></div>
+      <div><label>Credit limit ($, optional)</label><input id="creditLimit" type="number" value="0"/></div>
+      <div><label>—</label><input disabled value="Cash is updated by profit each round"/></div>
+    </div>
+    <div class="foot">
+      <button class="btn accent" onclick="startGame()">Start Simulation</button>
+      <button class="btn" onclick="resetAll()">Reset</button>
+    </div>
+    <div id="marketSummary" class="hint" style="margin-top:10px"></div>
+  </section>
 
-<section class="card">
-  <h2>Round Controls</h2>
-  <div id="controls" class="hint">Click “Start Simulation” to unlock controls.</div>
-</section>
+  <section class="card">
+    <h2>Round Controls</h2>
+    <div id="controls" class="hint">Click “Start Simulation” to unlock controls.</div>
+    <div id="cashBar" class="hint" style="margin-top:8px"></div>
+  </section>
 
-<section class="card" style="grid-column:1/3">
-  <h2>Results</h2>
-  <div class="hint">Each round introduces mild randomness—real markets are never perfectly predictable.</div>
-  <table id="table">
-    <thead><tr>
-      <th>Round</th><th>ΔPrice %</th><th>Marketing $</th><th>Training $</th><th>Event</th><th>Demand</th><th>Revenue $</th><th>Cost $</th><th>Profit $</th><th>Satisfaction</th>
-    </tr></thead>
-    <tbody></tbody>
-    <tfoot><tr><td colspan="10" class="muted">No data yet.</td></tr></tfoot>
-  </table>
-</section>
+  <section class="card" style="grid-column:1/3">
+    <h2>Results</h2>
+    <div class="hint">Each round includes mild randomness and advertising carryover.  Watch the marginal return on your spend and your runway.</div>
+    <table id="table">
+      <thead>
+        <tr>
+          <th>Round</th><th>ΔPrice %</th><th>Marketing $</th><th>Training $</th><th>Event</th><th>Demand</th><th>Revenue $</th><th>Cost $</th><th>Profit $</th><th>Satisfaction</th><th>Cash $</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+      <tfoot>
+        <tr><td colspan="11" class="muted">No data yet.</td></tr>
+      </tfoot>
+    </table>
+    <div id="roiHint" class="hint" style="margin-top:8px"></div>
+  </section>
 </main>
 
 <script>
 function xmur3(str){for(var i=0,h=1779033703^str.length;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19;}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return (h^h>>>16)>>>0};}
-function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296;}}
-const state={started:false,round:0,maxRounds:3,params:{},rows:[]};
+function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
+const state={started:false,round:0,maxRounds:3,params:{},rows:[],adstock:0,cash:0};
 
 function startGame(){
   const seed=Math.floor(Math.random()*1e6);
@@ -98,15 +106,18 @@ function startGame(){
     basePrice:num('#basePrice'),
     unitCost:num('#unitCost'),
     baseDemand:num('#baseDemand'),
-    elasticity:-1+(rng()-0.5)*0.4,
-    mkResp:0.25+ rng()*0.2,
-    trResp:0.2 + rng()*0.2,
+    startCash:num('#startCash'),
+    creditLimit:num('#creditLimit'),
+    elasticity:-1+(rng()-0.5)*0.4,           // around -1.0 ± 0.2
+    mkResp:0.30 + rng()*0.20,                // 0.30–0.50 marketing sensitivity
+    trResp:0.20 + rng()*0.20,                // 0.20–0.40 training sensitivity
     seed
   };
+  state.round=0; state.rows=[]; state.started=true; state.adstock=0; state.cash=state.params.startCash;
   document.getElementById('marketSummary').innerHTML=
     `Market profile → Elasticity: ${state.params.elasticity.toFixed(2)}, Marketing sensitivity: ${state.params.mkResp.toFixed(2)}, Training sensitivity: ${state.params.trResp.toFixed(2)}.`;
-  state.round=0;state.rows=[];state.started=true;
-  buildControls();renderTable();
+  updateCashBar();
+  buildControls(); renderTable();
 }
 
 function resetAll(){location.reload();}
@@ -115,49 +126,94 @@ function num(sel){return parseFloat(val(sel))||0;}
 
 function buildControls(){
   const c=document.getElementById('controls');
-  if(!state.started){c.innerHTML='<div class="muted">Click “Start Simulation” to unlock controls.</div>';return;}
-  const disabled=state.round>=state.maxRounds;
+  if(!state.started){c.innerHTML='Click “Start Simulation” to unlock controls.';return;}
+  const disabled=state.round>=state.maxRounds || bankrupt();
   c.innerHTML=`
-  <div class="row">
-    <div><label>Change price (Δ%)</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
-    <div><label>Marketing spend ($)</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
-    <div><label>Training spend ($)</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
-  </div>
-  <div class="foot"><button class="btn ${disabled?'':'accent'}" ${disabled?'disabled':''} onclick="runRound()">Run Round ${state.round+1}</button></div>`;
+    <div class="row">
+      <div><label>Change price (Δ%)</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
+      <div><label>Marketing spend ($)</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
+      <div><label>Training spend ($)</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
+    </div>
+    <div class="foot"><button class="btn ${disabled?'':'accent'}" ${disabled?'disabled':''} onclick="runRound()">Run Round ${state.round+1}</button></div>`;
 }
 
 function eventFor(rng){
   const roll=rng();
-  if(roll<0.15)return{name:'Competitor discount',demandMult:0.9,satDelta:-3};
-  if(roll<0.3)return{name:'Local buzz',demandMult:1.1,satDelta:+2};
-  if(roll<0.4)return{name:'Supply hiccup',demandMult:0.95,satDelta:-1};
-  if(roll<0.5)return{name:'Holiday surge',demandMult:1.15,satDelta:+1};
-  return{name:'Normal',demandMult:1.0,satDelta:0};
+  if(roll<0.15) return {name:'Competitor discount', demandMult:0.9, satDelta:-3};
+  if(roll<0.30) return {name:'Local buzz', demandMult:1.1, satDelta:+2};
+  if(roll<0.40) return {name:'Supply hiccup', demandMult:0.95, satDelta:-1};
+  if(roll<0.50) return {name:'Holiday surge', demandMult:1.15, satDelta:+1};
+  return {name:'Normal', demandMult:1.0, satDelta:0};
 }
 
 function runRound(){
-  if(state.round>=state.maxRounds)return;
+  if(state.round>=state.maxRounds || bankrupt()) return;
   const rng=mulberry32(xmur3(String(state.params.seed+state.round))());
   const p=state.params;
   const dPrice=num('#dPrice');
   const mSpend=Math.max(0,num('#mkt'));
   const tSpend=Math.max(0,num('#train'));
+
   const price=p.basePrice*(1+dPrice/100);
   let demand=Math.max(0,p.baseDemand*(1+p.elasticity*(dPrice/100)));
-  demand*=(1+p.mkResp*Math.tanh(mSpend/1000));
-  demand*=(1+(rng()-0.5)*0.1); // ±5% noise
-  let satisfaction=50+(p.trResp*Math.tanh(tSpend/800)*40)-(dPrice>0?Math.min(dPrice,20)*0.6:0);
-  satisfaction+=(rng()-0.5)*4; // ±2 point noise
+
+  // Advertising carryover (adstock) and diminishing returns
+  const effectiveM = mSpend + 0.6*state.adstock;     // carryover makes consecutive spend more effective
+  demand *= (1 + p.mkResp * Math.tanh(effectiveM/800));
+
+  // Mild stochastic noise to keep markets alive but not chaotic
+  demand *= (1 + (rng()-0.5)*0.06);                 // ±3 % noise
+
+  let satisfaction = 50 + (p.trResp * Math.tanh(tSpend/800) * 40) - (dPrice>0 ? Math.min(dPrice,20)*0.6 : 0);
+  satisfaction += (rng()-0.5)*2;                    // ±1 point noise
+
   const ev=eventFor(rng);
-  demand*=ev.demandMult; satisfaction+=ev.satDelta;
-  demand=Math.round(demand);
-  satisfaction=Math.max(0,Math.min(100,Math.round(satisfaction)));
-  const revenue=price*demand;
-  const cost=p.unitCost*demand+mSpend+tSpend;
-  const profit=Math.round((revenue-cost)*100)/100;
+  demand *= ev.demandMult; satisfaction += ev.satDelta;
+
+  demand = Math.round(demand);
+  satisfaction = Math.max(0, Math.min(100, Math.round(satisfaction)));
+
+  const revenue = price * demand;
+  const cost = p.unitCost*demand + mSpend + tSpend;
+  const profit = Math.round((revenue - cost) * 100)/100;
+
+  // Update cash (runway) and adstock
+  state.cash = Math.round((state.cash + profit) * 100)/100;
+  state.adstock = mSpend + 0.6*state.adstock;       // standard adstock form
+
+  // Marginal ROI hint vs previous round
+  let roiText = '';
+  if(state.rows.length>0){
+    const prev = state.rows[state.rows.length-1];
+    const deltaUnits = demand - prev.demand;
+    const grossPerUnit = price - p.unitCost;
+    const deltaGross = deltaUnits * grossPerUnit;
+    const deltaM = mSpend - prev.mSpend;
+    const mROI = Math.round((deltaGross - deltaM)*100)/100;
+    roiText = `ΔGross from extra units: ${fmt(deltaGross)}  –  ΔMarketing: ${fmt(deltaM)}  →  Net gain: ${fmt(mROI)}`;
+  } else {
+    roiText = 'After Round 2 you will see a marginal ROI hint comparing extra units vs extra marketing spend.';
+  }
+
   state.rows.push({round:state.round+1,dPrice,mSpend,tSpend,event:ev.name,demand,price:price.toFixed(2),
-                   revenue:revenue.toFixed(2),cost:cost.toFixed(2),profit,satisfaction});
-  state.round++;buildControls();renderTable();
+                   revenue:revenue.toFixed(2),cost:cost.toFixed(2),profit,satisfaction,cash:state.cash});
+  state.round++;
+  buildControls();
+  renderTable();
+  document.getElementById('roiHint').textContent = roiText;
+  updateCashBar();
+}
+
+function bankrupt(){
+  return state.cash < -Math.abs(state.params.creditLimit||0);
+}
+
+function updateCashBar(){
+  const bar=document.getElementById('cashBar');
+  if(!bar) return;
+  const limit = -Math.abs(state.params.creditLimit||0);
+  const warn = state.cash<0? 'bad':'ok';
+  bar.innerHTML = `Cash balance: <b class="${warn}">${fmt(state.cash)}</b>${limit<0?`  (credit limit ${fmt(limit)})`:''}`;
 }
 
 function renderTable(){
@@ -168,17 +224,17 @@ function renderTable(){
   tf.textContent='';
   for(const r of state.rows){
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.round}</td><td>${fmtPct(r.dPrice)}</td><td>${fmt(r.mSpend)}</td><td>${fmt(r.tSpend)}</td><td class="muted">${r.event}</td><td>${r.demand}</td><td>${fmt(r.revenue)}</td><td>${fmt(r.cost)}</td><td class="${r.profit>=0?'ok':'bad'}">${fmt(r.profit)}</td><td>${r.satisfaction}</td>`;
+    tr.innerHTML=`<td>${r.round}</td><td>${fmtPct(r.dPrice)}</td><td>${fmt(r.mSpend)}</td><td>${fmt(r.tSpend)}</td><td class="muted">${r.event}</td><td>${r.demand}</td><td>${fmt(r.revenue)}</td><td>${fmt(r.cost)}</td><td class="${r.profit>=0?'ok':'bad'}">${fmt(r.profit)}</td><td>${r.satisfaction}</td><td class="${r.cash<0?'bad':''}">${fmt(r.cash)}</td>`;
     tb.appendChild(tr);
   }
   const last=state.rows[state.rows.length-1];
   const m=state.params.metric;
-  const metricVal=m==='profit'?last.profit:(m==='satisfaction'?last.satisfaction:(last.demand>0?Math.round((last.revenue/last.demand-state.params.unitCost)*10)/10:0));
+  const metricVal = m==='profit' ? last.profit : (m==='satisfaction' ? last.satisfaction : (last.demand>0 ? Math.round((last.revenue/last.demand - state.params.unitCost)*10)/10 : 0));
   tf.innerHTML=`Primary metric <b>${m}</b>: <b>${m==='profit'?fmt(metricVal):metricVal}</b>. Rounds completed ${state.rows.length}/${state.maxRounds}.`;
 }
 
 function fmt(n){return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtPct(n){return(n>0?'+':'')+n.toFixed(0)+'%';}
+function fmtPct(n){return (n>0?'+':'')+Number(n).toFixed(0)+'%';}
 </script>
 </body>
 </html>
