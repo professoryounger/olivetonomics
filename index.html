@@ -25,18 +25,33 @@
     th,td{padding:8px 10px;border-bottom:1px solid #22304a;text-align:right}
     th:first-child,td:first-child{text-align:left}
     tfoot td{font-weight:600}
-    #loaderOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);color:var(--accent);display:none;align-items:center;justify-content:center;flex-direction:column;font-family:monospace;font-size:20px;z-index:9999;}
+    #loaderOverlay{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,.9);color:var(--accent);
+      display:none;align-items:center;justify-content:center;flex-direction:column;
+      font-family:monospace;font-size:20px;z-index:9999;
+    }
+    .spinner{
+      border:6px solid rgba(255,255,255,0.1);
+      border-top:6px solid var(--accent);
+      border-radius:50%;width:60px;height:60px;
+      animation:spin 1s linear infinite;margin-top:20px;
+    }
+    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Agile Market Simulation</span></h1>
-    <div class="muted">Now with monthly cycles, cash runway, and typewriter-style event loader.</div>
+    <div class="muted">Now with monthly cycles, cash runway, and animated event loader.</div>
   </div>
 </header>
 
-<div id="loaderOverlay"><div id="loaderText"></div></div>
+<div id="loaderOverlay">
+  <div id="loaderText"></div>
+  <div class="spinner"></div>
+</div>
 
 <main class="wrap grid">
   <section class="card">
@@ -71,6 +86,7 @@
 
 <script>
 const state={started:false,month:0,maxMonths:3,rows:[],cash:0};
+
 function startGame(){
   state.maxMonths=parseInt(document.getElementById('months').value)||12;
   state.month=0;state.rows=[];
@@ -78,7 +94,9 @@ function startGame(){
   state.cash=parseFloat(document.getElementById('startCash').value)||5000;
   buildControls();renderTable();updateCashBar();
 }
+
 function resetAll(){location.reload();}
+
 function buildControls(){
   const c=document.getElementById('controls');
   if(!state.started){c.textContent='Press “Start Simulation”.';return;}
@@ -90,20 +108,39 @@ function buildControls(){
   </div>
   <div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;
 }
+
 function updateCashBar(){
   document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;
 }
+
 function runMonth(){
-  showLoader(['Processing market data...','Calculating sales...','Analysing competitors...','Applying event...']);
-  setTimeout(()=>{simulate();hideLoader();},3000);
+  const events = {
+    "Competitor discount": "⚠️ Competitor Discount! Rivals slashed prices — demand may fall.",
+    "Local buzz": "🌟 Local Buzz! Word of mouth got you free advertising.",
+    "Supply hiccup": "🚚 Supply Hiccup! Some goods delayed — slight impact on output.",
+    "Holiday surge": "🎉 Holiday Surge! Seasonal shopping drives higher demand.",
+    "Normal": "📊 Normal Month – business as usual."
+  };
+  const eventNames = Object.keys(events);
+  const eventName = eventNames[Math.floor(Math.random()*eventNames.length)];
+  const eventMsg = events[eventName];
+  state.nextEvent = { name: eventName, msg: eventMsg };
+
+  showLoader([
+    "Processing market data...",
+    "Calculating sales...",
+    "Analysing competitors...",
+    "Applying event..."
+  ]);
+  setTimeout(()=>{simulate();hideLoader(eventMsg);},3000);
 }
+
 function simulate(){
   const company=document.getElementById('company').value.trim();
   const dPrice=parseFloat(document.getElementById('dPrice').value)||0;
   const mSpend=parseFloat(document.getElementById('mkt').value)||0;
   const tSpend=parseFloat(document.getElementById('train').value)||0;
-  const events=['Competitor discount','Local buzz','Supply hiccup','Holiday surge','Normal'];
-  const event=events[Math.floor(Math.random()*events.length)];
+  const event=state.nextEvent?.name||'Normal';
   let demand=120*(1-(dPrice/100)*0.5)+(Math.random()*10-5);
   if(event==='Local buzz')demand*=1.1;
   if(event==='Competitor discount')demand*=0.9;
@@ -120,6 +157,7 @@ function simulate(){
   state.month++;
   buildControls();renderTable();updateCashBar();
 }
+
 function renderTable(){
   const tb=document.querySelector('#table tbody');
   const tf=document.querySelector('#table tfoot tr td');
@@ -142,46 +180,46 @@ function renderTable(){
   }
   tf.textContent=`Months completed ${state.rows.length}/${state.maxMonths}.`;
 }
+
 function fmt(n){return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+
 function showLoader(lines){
   const overlay=document.getElementById('loaderOverlay');
   const loader=document.getElementById('loaderText');
-  overlay.style.display='flex';loader.textContent='';
+  overlay.style.display='flex';loader.innerHTML='';
   let i=0;
   function type(){
     if(i<lines.length){
-      loader.textContent+=lines[i]+'\\n';
+      loader.innerHTML+=lines[i]+'<br>';
       i++;
       setTimeout(type,600);
     }
   }
   type();
 }
-function hideLoader(){
-  setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},2000);
+
+function hideLoader(finalMessage){
+  const loader=document.getElementById('loaderText');
+  setTimeout(()=>{
+    loader.innerHTML+=`<br><span style="color:#6ee7a6;font-weight:bold;">${finalMessage}</span>`;
+  },2500);
+  setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},5000);
 }
-function exportCSV() {
-  if (state.rows.length === 0) return;
-  const headers = ['month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
-  const company = (state.rows[0]?.company || document.getElementById('company').value || 'olivetonomics')
-                    .replace(/[^a-z0-9]/gi, '_');
-  const now = new Date();
-  const timestamp = now.toISOString().replace('T', ' ').substring(0, 19);
-  const metadata = [
-    `Company:,${company}`,
-    `Exported:,${timestamp}`
-  ];
-  const lines = metadata
-    .concat([''])
-    .concat([headers.join(',')])
-    .concat(state.rows.map(r =>
-      [r.month, r.dPrice, r.mSpend, r.tSpend, `"${r.event}"`, r.demand,
-       r.revenue.toFixed(2), r.cost.toFixed(2), r.profit.toFixed(2), r.cash.toFixed(2)].join(',')
-    ));
-  const blob = new Blob([lines.join('\\n')], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${company}_results.csv`;
+
+function exportCSV(){
+  if(state.rows.length===0)return;
+  const headers=['month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
+  const company=(state.rows[0]?.company||document.getElementById('company').value||'olivetonomics').replace(/[^a-z0-9]/gi,'_');
+  const now=new Date();
+  const timestamp=now.toISOString().replace('T',' ').substring(0,19);
+  const metadata=[`Company:,${company}`,`Exported:,${timestamp}`];
+  const lines=metadata.concat(['']).concat([headers.join(',')]).concat(state.rows.map(r=>
+    [r.month,r.dPrice,r.mSpend,r.tSpend,`"${r.event}"`,r.demand,
+     r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2),r.cash.toFixed(2)].join(',')));
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${company}_results.csv`;
   a.click();
 }
 </script>
