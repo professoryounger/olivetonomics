@@ -25,25 +25,58 @@
     th,td{padding:8px 10px;border-bottom:1px solid #22304a;text-align:right}
     th:first-child,td:first-child{text-align:left}
     tfoot td{font-weight:600}
-    #loaderOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);color:var(--accent);display:none;align-items:center;justify-content:center;flex-direction:column;font-family:monospace;font-size:20px;z-index:9999;text-align:center;}
-    .spinner{border:4px solid #22304a;border-top:4px solid var(--accent);border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;margin-bottom:16px;}
+
+    /* Loader overlay */
+    #loaderOverlay{
+      position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,.92);color:var(--accent);
+      display:none;align-items:center;justify-content:center;flex-direction:column;
+      font-family:monospace;font-size:18px;z-index:9999;text-align:center;padding:20px;
+    }
+    .spinner{
+      border:4px solid #22304a;border-top:4px solid var(--accent);
+      border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;margin-bottom:16px;
+    }
     @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-    #continueBtn{margin-top:18px;padding:10px 22px;font-size:16px;border-radius:10px;background:#132542;border:1px solid #1b3966;color:var(--accent);cursor:pointer;display:none;transition:0.2s}
-    #continueBtn:hover{background:#1b3966;color:#fff}
+
+    #loaderText{white-space:pre-line;min-height:80px;}
+    #eventReveal{
+      margin-top:10px;font-size:24px;font-weight:700;color:#bfe0ff;
+      text-shadow:0 0 8px rgba(112,181,255,.6);
+      opacity:0;transform:scale(.98);
+      transition:opacity .4s ease, transform .4s ease;
+    }
+    #eventReveal.pulse{
+      animation:pulse 1.4s ease-in-out 2;
+    }
+    @keyframes pulse {
+      0%{text-shadow:0 0 6px rgba(112,181,255,.6)}
+      50%{text-shadow:0 0 14px rgba(112,181,255,.95)}
+      100%{text-shadow:0 0 6px rgba(112,181,255,.6)}
+    }
+
+    #continueBtn{
+      margin-top:18px;padding:10px 22px;font-size:16px;border-radius:10px;
+      background:#132542;border:1px solid #1b3966;color:var(--accent);
+      cursor:pointer;display:none;transition:0.2s;
+      box-shadow:0 0 8px rgba(112,181,255,.35);
+    }
+    #continueBtn:hover{background:#1b3966;color:#fff;box-shadow:0 0 12px rgba(112,181,255,.6)}
   </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Agile Market Simulation (24-Month Mode)</span></h1>
-    <div class="muted">Immersive simulation with typewriter event reveal and reflective pacing.</div>
+    <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Agile Market Simulation - 24 Months</span></h1>
+    <div class="muted">Immersive loader with emoji event reveal.  Synced events and CSV export for analysis.</div>
   </div>
 </header>
 
 <div id="loaderOverlay">
   <div class="spinner"></div>
   <div id="loaderText"></div>
-  <button id="continueBtn" onclick="hideLoader()">Continue</button>
+  <div id="eventReveal"></div>
+  <button id="continueBtn">Continue</button>
 </div>
 
 <main class="wrap grid">
@@ -67,7 +100,9 @@
   <section class="card" style="grid-column:1/3">
     <h2>Results</h2>
     <table id="table">
-      <thead><tr><th>Month</th><th>ΔPrice%</th><th>Marketing$</th><th>Training$</th><th>Event</th><th>Demand</th><th>Revenue$</th><th>Cost$</th><th>Profit$</th><th>Cash$</th></tr></thead>
+      <thead>
+        <tr><th>Month</th><th>ΔPrice%</th><th>Marketing$</th><th>Training$</th><th>Event</th><th>Demand</th><th>Revenue$</th><th>Cost$</th><th>Profit$</th><th>Cash$</th></tr>
+      </thead>
       <tbody></tbody>
       <tfoot><tr><td colspan="10" class="muted">No data yet.</td></tr></tfoot>
     </table>
@@ -76,124 +111,204 @@
 </main>
 
 <script>
-const state={started:false,month:0,maxMonths:24,rows:[],cash:0};
+const state = { started:false, month:0, maxMonths:24, rows:[], cash:0, loaderMode:'intro', pendingEvent:null };
+
+const EVENTS = [
+  { name:'Competitor discount', emoji:'⚠️', effect:'Customers flock to cheaper rival', dMult:0.90 },
+  { name:'Local buzz',          emoji:'🎉', effect:'Word of mouth boosts your brand',  dMult:1.10 },
+  { name:'Supply hiccup',       emoji:'📦', effect:'Stock delays hurt sales',          dMult:0.95 },
+  { name:'Holiday surge',       emoji:'🌟', effect:'Seasonal demand spike increases traffic', dMult:1.15 },
+  { name:'Normal',              emoji:'💼', effect:'Stable market conditions',         dMult:1.00 },
+];
 
 function startGame(){
-  state.maxMonths=parseInt(document.getElementById('months').value)||24;
-  state.month=0;state.rows=[];state.started=true;
-  state.cash=parseFloat(document.getElementById('startCash').value)||5000;
-  buildControls();renderTable();updateCashBar();
+  state.maxMonths = parseInt(document.getElementById('months').value)||24;
+  state.month = 0; state.rows = []; state.started = true;
+  state.cash = parseFloat(document.getElementById('startCash').value)||5000;
+  buildControls(); renderTable(); updateCashBar();
+  showIntroLoader();
 }
 
-function resetAll(){location.reload();}
+function resetAll(){ location.reload(); }
 
 function buildControls(){
-  const c=document.getElementById('controls');
-  if(!state.started){c.textContent='Press “Start Simulation”.';return;}
-  const disabled=state.month>=state.maxMonths;
-  c.innerHTML=`<div class="row">
+  const c = document.getElementById('controls');
+  if(!state.started){ c.textContent = 'Press “Start Simulation”.'; return; }
+  const disabled = state.month >= state.maxMonths;
+  c.innerHTML = `
+    <div class="row">
       <div><label>ΔPrice%</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
       <div><label>Marketing$</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
       <div><label>Training$</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
     </div>
-    <div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;
+    <div class="foot">
+      <button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button>
+    </div>`;
 }
 
-function updateCashBar(){document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;}
+function updateCashBar(){ document.getElementById('cashBar').innerHTML = `Cash: <b>${fmt(state.cash)}</b>`; }
 
 function runMonth(){
-  const monthLabel=state.month+1;
-  const loaderLines=[
+  // Pick event once - shared between loader and simulation.
+  state.pendingEvent = EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  const monthLabel = state.month + 1;
+  const lines = [
     `Processing Month ${monthLabel} data...`,
-    "Calculating sales performance...",
-    "Analysing competitor behaviour...",
-    "Updating employee morale...",
-    "Applying market event..."
+    `Calculating sales performance...`,
+    `Analysing competitor behaviour...`,
+    `Updating employee morale...`,
+    `Applying market event...`
   ];
-  const event=simulate(true);
-  showLoader(loaderLines,event);
+  showProcessingLoader(lines, state.pendingEvent);
 }
 
-function simulate(previewOnly=false){
-  const dPrice=parseFloat(document.getElementById('dPrice').value)||0;
-  const mSpend=parseFloat(document.getElementById('mkt').value)||0;
-  const tSpend=parseFloat(document.getElementById('train').value)||0;
-  const events=[
-    {name:'Competitor discount',effect:'Customers flock to cheaper rival',dMult:0.9},
-    {name:'Local buzz',effect:'Word of mouth boosts your brand',dMult:1.1},
-    {name:'Supply hiccup',effect:'Stock delays hurt sales',dMult:0.95},
-    {name:'Holiday surge',effect:'Seasonal demand spike increases traffic',dMult:1.15},
-    {name:'Normal',effect:'Stable month',dMult:1.0}
-  ];
-  const event=events[Math.floor(Math.random()*events.length)];
-  if(previewOnly) return event; // preview for loader
-  
-  let demand=120*(1-(dPrice/100)*0.5)+(Math.random()*10-5);
-  demand*=event.dMult;
-  const price=10*(1+dPrice/100);
-  const revenue=price*demand;
-  const cost=4*demand+mSpend+tSpend;
-  const profit=revenue-cost;
-  state.cash+=profit;
-  state.rows.push({month:state.month+1,dPrice,mSpend,tSpend,event:event.name,demand:Math.round(demand),revenue,cost,profit,cash:state.cash});
-  state.month++;buildControls();renderTable();updateCashBar();
+function simulateWithEvent(eventObj){
+  const dPrice = parseFloat(document.getElementById('dPrice').value)||0;
+  const mSpend = parseFloat(document.getElementById('mkt').value)||0;
+  const tSpend = parseFloat(document.getElementById('train').value)||0;
+
+  let demand = 120*(1-(dPrice/100)*0.5) + (Math.random()*10-5); // base elasticity + a little noise
+  demand *= eventObj.dMult;
+
+  const price = 10*(1 + dPrice/100);
+  const revenue = price * demand;
+  const cost = 4*demand + mSpend + tSpend;
+  const profit = revenue - cost;
+
+  state.cash += profit;
+
+  state.rows.push({
+    company: document.getElementById('company').value.trim(),
+    month: state.month+1,
+    dPrice, mSpend, tSpend,
+    event: `${eventObj.emoji} ${eventObj.name}`,
+    demand: Math.round(demand),
+    revenue, cost, profit, cash: state.cash
+  });
+
+  state.month++;
+  buildControls(); renderTable(); updateCashBar();
 }
 
 function renderTable(){
-  const tb=document.querySelector('#table tbody');
-  const tf=document.querySelector('#table tfoot tr td');
-  tb.innerHTML='';
-  if(state.rows.length===0){tf.textContent='No data yet.';return;}
-  tf.textContent='';
+  const tb = document.querySelector('#table tbody');
+  const tf = document.querySelector('#table tfoot tr td');
+  tb.innerHTML = '';
+  if(state.rows.length===0){ tf.textContent = 'No data yet.'; return; }
+  tf.textContent = '';
   for(const r of state.rows){
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${r.month}</td>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.month}</td>
       <td>${r.dPrice}%</td>
       <td>${fmt(r.mSpend)}</td>
       <td>${fmt(r.tSpend)}</td>
-      <td class='muted'>${r.event}</td>
+      <td class="muted">${r.event}</td>
       <td>${r.demand}</td>
       <td>${fmt(r.revenue)}</td>
       <td>${fmt(r.cost)}</td>
-      <td class='${r.profit>=0?'ok':'bad'}'>${fmt(r.profit)}</td>
-      <td class='${r.cash<0?'bad':''}'>${fmt(r.cash)}</td>`;
+      <td class="${r.profit>=0?'ok':'bad'}">${fmt(r.profit)}</td>
+      <td class="${r.cash<0?'bad':''}">${fmt(r.cash)}</td>`;
     tb.appendChild(tr);
   }
-  tf.textContent=`Months completed ${state.rows.length}/${state.maxMonths}.`;
+  tf.textContent = `Months completed ${state.rows.length}/${state.maxMonths}.`;
 }
 
-function fmt(n){return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n){ return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
 
-function showLoader(lines,event){
-  const overlay=document.getElementById('loaderOverlay');
-  const loader=document.getElementById('loaderText');
-  const cont=document.getElementById('continueBtn');
-  overlay.style.display='flex';loader.textContent='';cont.style.display='none';
-  let i=0;
-  function type(){
-    if(i<lines.length){
-      loader.textContent+=lines[i]+'\n';
-      i++;setTimeout(type,600);
+/* ---------- Loader logic ---------- */
+
+const overlay = document.getElementById('loaderOverlay');
+const loaderText = document.getElementById('loaderText');
+const eventReveal = document.getElementById('eventReveal');
+const continueBtn = document.getElementById('continueBtn');
+
+continueBtn.addEventListener('click', ()=>{
+  if(state.loaderMode === 'intro'){
+    hideLoader();
+  }else if(state.loaderMode === 'month'){
+    // Run the month using the already-chosen event, then hide.
+    simulateWithEvent(state.pendingEvent);
+    state.pendingEvent = null;
+    hideLoader();
+  }
+});
+
+function showIntroLoader(){
+  state.loaderMode = 'intro';
+  eventReveal.style.opacity = 0; eventReveal.classList.remove('pulse');
+  continueBtn.style.display = 'none';
+  overlay.style.display = 'flex';
+  loaderText.innerHTML = '';
+  typeLines([
+    'Initializing Olivetonomics systems...',
+    'Seeding market conditions...',
+    'Loading financial models...',
+    'Ready.'
+  ], ()=>{
+    // Show a small invite to begin.
+    eventReveal.innerHTML = 'Press Continue to begin Month 1.';
+    eventReveal.style.opacity = 1;
+    eventReveal.classList.add('pulse');
+    continueBtn.textContent = 'Continue';
+    continueBtn.style.display = 'inline-block';
+  });
+}
+
+function showProcessingLoader(lines, eventObj){
+  state.loaderMode = 'month';
+  overlay.style.display = 'flex';
+  loaderText.innerHTML = '';
+  eventReveal.style.opacity = 0; eventReveal.classList.remove('pulse');
+  continueBtn.style.display = 'none';
+  typeLines(lines, ()=>{
+    // After lines, reveal the event prominently with emoji.
+    eventReveal.innerHTML = `${eventObj.emoji} ${eventObj.name} - ${eventObj.effect}`;
+    eventReveal.style.opacity = 1;
+    eventReveal.classList.add('pulse');
+    // Then enable Continue.
+    setTimeout(()=>{
+      continueBtn.textContent = 'Continue';
+      continueBtn.style.display = 'inline-block';
+    }, 600);
+  });
+}
+
+function typeLines(lines, done){
+  let i = 0;
+  function step(){
+    if(i < lines.length){
+      loaderText.innerHTML += lines[i] + '<br>';
+      i++;
+      setTimeout(step, 600);
     }else{
-      setTimeout(()=>{loader.textContent+=`\n${event.name}! — ${event.effect}`;cont.style.display='inline-block';simulate();},800);
+      done && done();
     }
   }
-  type();
+  step();
 }
 
-function hideLoader(){
-  document.getElementById('loaderOverlay').style.display='none';
-}
+function hideLoader(){ overlay.style.display = 'none'; }
 
+/* ---------- Export ---------- */
 function exportCSV(){
-  if(state.rows.length===0)return;
-  const headers=['month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
-  const lines=[headers.join(',')].concat(state.rows.map(r=>
-    [r.month,r.dPrice,r.mSpend,r.tSpend,`"${r.event}"`,r.demand,r.revenue,r.cost,r.profit,r.cash].join(',')
-  ));
-  const blob=new Blob([lines.join('\n')],{type:'text/csv'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);a.download='olivetonomics_24m_results.csv';a.click();
+  if(state.rows.length===0) return;
+  const headers = ['company','month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
+  const company = (state.rows[0]?.company || document.getElementById('company').value || 'olivetonomics').replace(/[^a-z0-9]/gi,'_');
+  const now = new Date();
+  const timestamp = now.toISOString().replace('T',' ').substring(0,19);
+  const meta = [`Company:,${company}`,`Exported:,${timestamp}`,''];
+  const lines = [headers.join(',')].concat(
+    state.rows.map(r=>[
+      `"${r.company||''}"`, r.month, r.dPrice, r.mSpend, r.tSpend, `"${r.event}"`, r.demand,
+      r.revenue.toFixed(2), r.cost.toFixed(2), r.profit.toFixed(2), r.cash.toFixed(2)
+    ].join(','))
+  );
+  const blob = new Blob([meta.join('\n')+'\n'+lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${company}_results.csv`;
+  a.click();
 }
 </script>
 </body>
