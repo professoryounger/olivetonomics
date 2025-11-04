@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Olivetonomics – Lean Startup Simulation</title>
+  <title>Olivetonomics – Extended Lean Startup Simulation</title>
   <style>
     :root { --bg:#0b1220;--panel:#121a2a;--muted:#9fb3c8;--text:#e6eef8;--accent:#70b5ff;--ok:#6ee7a6;--bad:#ff9aa8; }
     *{box-sizing:border-box}
@@ -25,39 +25,29 @@
     th,td{padding:8px 10px;border-bottom:1px solid #22304a;text-align:right}
     th:first-child,td:first-child{text-align:left}
     tfoot td{font-weight:600}
-    #loaderOverlay{
-      position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,.9);color:var(--accent);
-      display:none;align-items:center;justify-content:center;flex-direction:column;
-      font-family:monospace;font-size:20px;z-index:9999;
-    }
-    .spinner{
-      border:6px solid rgba(255,255,255,0.1);
-      border-top:6px solid var(--accent);
-      border-radius:50%;width:60px;height:60px;
-      animation:spin 1s linear infinite;margin-top:20px;
-    }
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    #loaderOverlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.9);color:var(--accent);display:none;align-items:center;justify-content:center;flex-direction:column;font-family:monospace;font-size:20px;z-index:9999;}
+    .spinner{border:4px solid #22304a;border-top:4px solid var(--accent);border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;margin-bottom:16px;}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Agile Market Simulation</span></h1>
-    <div class="muted">Now with monthly cycles, cash runway, and animated event loader.</div>
+    <h1>Olivetonomics <span style="font-size:14px;color:var(--muted)">Agile Market Simulation (24-Month Mode)</span></h1>
+    <div class="muted">Long-form simulation with cash runway, random events, and reflective pacing.</div>
   </div>
 </header>
 
 <div id="loaderOverlay">
-  <div id="loaderText"></div>
   <div class="spinner"></div>
+  <div id="loaderText"></div>
 </div>
 
 <main class="wrap grid">
   <section class="card">
     <h2>Setup</h2>
     <label>Company name</label><input id="company" placeholder="e.g., Campus Coffee Co." />
-    <label>Months to simulate</label><input id="months" type="number" value="12" min="3" max="24" />
+    <label>Months to simulate</label><input id="months" type="number" value="24" min="3" max="36" />
     <label>Starting cash ($)</label><input id="startCash" type="number" value="5000" />
     <div class="foot">
       <button class="btn accent" onclick="startGame()">Start Simulation</button>
@@ -79,85 +69,71 @@
       <tfoot><tr><td colspan="10" class="muted">No data yet.</td></tr></tfoot>
     </table>
     <div class="foot">
-      <button class="btn" onclick="exportCSV()">Export Results (CSV)</button>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
     </div>
   </section>
 </main>
 
 <script>
-const state={started:false,month:0,maxMonths:3,rows:[],cash:0};
-
+const state={started:false,month:0,maxMonths:24,rows:[],cash:0};
 function startGame(){
-  state.maxMonths=parseInt(document.getElementById('months').value)||12;
-  state.month=0;state.rows=[];
-  state.started=true;
+  state.maxMonths=parseInt(document.getElementById('months').value)||24;
+  state.month=0;state.rows=[];state.started=true;
   state.cash=parseFloat(document.getElementById('startCash').value)||5000;
   buildControls();renderTable();updateCashBar();
 }
-
 function resetAll(){location.reload();}
-
 function buildControls(){
   const c=document.getElementById('controls');
   if(!state.started){c.textContent='Press “Start Simulation”.';return;}
   const disabled=state.month>=state.maxMonths;
   c.innerHTML=`<div class="row">
-    <div><label>ΔPrice%</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
-    <div><label>Marketing$</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
-    <div><label>Training$</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
-  </div>
-  <div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;
+      <div><label>ΔPrice%</label><input id="dPrice" type="number" value="0" ${disabled?'disabled':''}></div>
+      <div><label>Marketing$</label><input id="mkt" type="number" value="500" ${disabled?'disabled':''}></div>
+      <div><label>Training$</label><input id="train" type="number" value="300" ${disabled?'disabled':''}></div>
+    </div>
+    <div class="foot"><button class="btn accent" ${disabled?'disabled':''} onclick="runMonth()">Run Month ${state.month+1}</button></div>`;
 }
-
-function updateCashBar(){
-  document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;
-}
-
+function updateCashBar(){document.getElementById('cashBar').innerHTML=`Cash: <b>${fmt(state.cash)}</b>`;}
 function runMonth(){
-  const events = {
-    "Competitor discount": "⚠️ Competitor Discount! Rivals slashed prices — demand may fall.",
-    "Local buzz": "🌟 Local Buzz! Word of mouth got you free advertising.",
-    "Supply hiccup": "🚚 Supply Hiccup! Some goods delayed — slight impact on output.",
-    "Holiday surge": "🎉 Holiday Surge! Seasonal shopping drives higher demand.",
-    "Normal": "📊 Normal Month – business as usual."
-  };
-  const eventNames = Object.keys(events);
-  const eventName = eventNames[Math.floor(Math.random()*eventNames.length)];
-  const eventMsg = events[eventName];
-  state.nextEvent = { name: eventName, msg: eventMsg };
-
-  showLoader([
-    "Processing market data...",
-    "Calculating sales...",
-    "Analysing competitors...",
-    "Applying event..."
-  ]);
-  setTimeout(()=>{simulate();hideLoader(eventMsg);},3000);
+  const monthLabel=state.month+1;
+  const loaderLines=[
+    `Processing Month ${monthLabel} data...`,
+    "Calculating sales performance...",
+    "Analysing competitor behaviour...",
+    "Updating employee morale...",
+    "Applying market event..."
+  ];
+  showLoader(loaderLines);
+  setTimeout(()=>{simulate();hideLoader();},4000);
 }
-
 function simulate(){
-  const company=document.getElementById('company').value.trim();
   const dPrice=parseFloat(document.getElementById('dPrice').value)||0;
   const mSpend=parseFloat(document.getElementById('mkt').value)||0;
   const tSpend=parseFloat(document.getElementById('train').value)||0;
-  const event=state.nextEvent?.name||'Normal';
+  const events=[
+    {name:'Competitor discount',effect:'Customers flock to cheaper rival',dMult:0.9,sDesc:'Competitors ran a sale!'},
+    {name:'Local buzz',effect:'Word of mouth boosts your brand',dMult:1.1,sDesc:'Positive buzz spreads!'},
+    {name:'Supply hiccup',effect:'Stock delays hurt sales',dMult:0.95,sDesc:'Supplier issues slowed output.'},
+    {name:'Holiday surge',effect:'Seasonal demand spike',dMult:1.15,sDesc:'Holiday rush increases traffic.'},
+    {name:'Normal',effect:'Stable market conditions',dMult:1.0,sDesc:'Routine month.'}
+  ];
+  const event=events[Math.floor(Math.random()*events.length)];
   let demand=120*(1-(dPrice/100)*0.5)+(Math.random()*10-5);
-  if(event==='Local buzz')demand*=1.1;
-  if(event==='Competitor discount')demand*=0.9;
-  if(event==='Holiday surge')demand*=1.15;
+  demand*=event.dMult;
   const price=10*(1+dPrice/100);
   const revenue=price*demand;
   const cost=4*demand+mSpend+tSpend;
   const profit=revenue-cost;
   state.cash+=profit;
   state.rows.push({
-    company,month:state.month+1,dPrice,mSpend,tSpend,event,
-    demand:Math.round(demand),revenue,cost,profit,cash:state.cash
+    month:state.month+1,dPrice,mSpend,tSpend,
+    event:event.name,demand:Math.round(demand),
+    revenue,cost,profit,cash:state.cash,desc:event.sDesc
   });
-  state.month++;
-  buildControls();renderTable();updateCashBar();
+  state.month++;buildControls();renderTable();updateCashBar();
+  showEventPopup(event);
 }
-
 function renderTable(){
   const tb=document.querySelector('#table tbody');
   const tf=document.querySelector('#table tfoot tr td');
@@ -180,47 +156,37 @@ function renderTable(){
   }
   tf.textContent=`Months completed ${state.rows.length}/${state.maxMonths}.`;
 }
-
 function fmt(n){return '$'+Number(n).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
-
 function showLoader(lines){
   const overlay=document.getElementById('loaderOverlay');
   const loader=document.getElementById('loaderText');
-  overlay.style.display='flex';loader.innerHTML='';
+  overlay.style.display='flex';
+  loader.textContent='';
   let i=0;
   function type(){
     if(i<lines.length){
-      loader.innerHTML+=lines[i]+'<br>';
+      loader.textContent+=lines[i]+'\n';
       i++;
       setTimeout(type,600);
     }
   }
   type();
 }
-
-function hideLoader(finalMessage){
-  const loader=document.getElementById('loaderText');
+function hideLoader(){setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},2000);}
+function showEventPopup(event){
   setTimeout(()=>{
-    loader.innerHTML+=`<br><span style="color:#6ee7a6;font-weight:bold;">${finalMessage}</span>`;
-  },2500);
-  setTimeout(()=>{document.getElementById('loaderOverlay').style.display='none';},5000);
+    alert(`${event.name}! — ${event.effect}`);
+  },1000);
 }
-
 function exportCSV(){
   if(state.rows.length===0)return;
   const headers=['month','delta_price_pct','marketing','training','event','demand','revenue','cost','profit','cash'];
-  const company=(state.rows[0]?.company||document.getElementById('company').value||'olivetonomics').replace(/[^a-z0-9]/gi,'_');
-  const now=new Date();
-  const timestamp=now.toISOString().replace('T',' ').substring(0,19);
-  const metadata=[`Company:,${company}`,`Exported:,${timestamp}`];
-  const lines=metadata.concat(['']).concat([headers.join(',')]).concat(state.rows.map(r=>
-    [r.month,r.dPrice,r.mSpend,r.tSpend,`"${r.event}"`,r.demand,
-     r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2),r.cash.toFixed(2)].join(',')));
+  const lines=[headers.join(',')].concat(state.rows.map(r=>
+    [r.month,r.dPrice,r.mSpend,r.tSpend,`"${r.event}"`,r.demand,r.revenue,r.cost,r.profit,r.cash].join(',')
+  ));
   const blob=new Blob([lines.join('\n')],{type:'text/csv'});
   const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download=`${company}_results.csv`;
-  a.click();
+  a.href=URL.createObjectURL(blob);a.download='olivetonomics_24m_results.csv';a.click();
 }
 </script>
 </body>
